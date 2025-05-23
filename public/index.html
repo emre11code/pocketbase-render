@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PocketBase Dosya Yükleme</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      padding: 20px;
+      background: #f7f7f7;
+    }
+    input, button {
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📤 Dosya Yükleyici</h1>
+
+  <!-- Giriş Formu -->
+  <form id="loginForm">
+    <h3>🔐 Giriş Yap</h3>
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Şifre" required />
+    <button type="submit">Giriş Yap</button>
+  </form>
+
+  <!-- Dosya Yükleme Formu -->
+  <form id="uploadForm" style="display: none;">
+    <h3>🖼️ Dosya Yükle</h3>
+    <input type="file" id="fileInput" />
+    <button type="submit">Yükle</button>
+  </form>
+
+  <script>
+    let token = "";
+
+    // Kullanıcı girişi
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('http://127.0.0.1:8090/api/collections/users/auth-with-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identity: email, password: password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          token = data.token;
+          alert("✅ Giriş başarılı!");
+          document.getElementById('loginForm').style.display = 'none';
+          document.getElementById('uploadForm').style.display = 'block';
+        } else {
+          alert("❌ Giriş başarısız: " + data.message);
+        }
+      } catch (err) {
+        console.error("❌ Giriş hatası:", err);
+        alert("Sunucuya ulaşılamadı.");
+      }
+    });
+
+    // Dosya yükleme
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = document.getElementById('fileInput').files[0];
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await fetch('http://127.0.0.1:8090/api/collections/uploads/records', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          console.log("✅ Upload başarılı:", result);
+          alert("Dosya başarıyla yüklendi!");
+        } else {
+          console.error("❌ Upload hatası:", result);
+          alert("Hata: " + result.message);
+        }
+      } catch (err) {
+        console.error("❌ Yükleme hatası:", err);
+      }
+    });
+  </script>
+
+</body>
+</html>
